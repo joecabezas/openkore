@@ -1,0 +1,91 @@
+!include ../../custom/common/macros/utils.txt
+!include ../../custom/common/macros/alerts.txt
+!include ../../custom/common/macros/follow.txt
+
+automacro k014_chat_buff_party {
+    party /^([bamgphk]|as|an)(\d+)?$/i
+    call {
+        $target = $.lastparty
+        call k014_chat_buff
+    }
+}
+
+# automacro k014_chat_buff_pm {
+#     pm /^([bamgphk]|as|an)(\d+)?$/i
+#     call {
+#         $target = $.lastpm
+#         call k014_chat_buff
+#     }
+# }
+
+macro k014_chat_buff {
+    if ($.lastMatch2 != "") {
+        $target = $.lastMatch2
+    }
+
+    pause 1
+
+    if ($.lastMatch1 =~ /^h$/i) {
+        do sp "Heal" $target
+    }
+    if ($.lastMatch1 =~ /^b$/i) {
+        do sp "Blessing" $target
+    }
+    if ($.lastMatch1 =~ /^a$/i) {
+        do sp "Increase AGI" $target
+    }
+    if ($.lastMatch1 =~ /^m$/i) {
+        do sp "Magnificat" $target
+    }
+    if ($.lastMatch1 =~ /^g$/i) {
+        do sp "Gloria" $target
+    }
+    if ($.lastMatch1 =~ /^p$/i) {
+        do sp "Pneuma" $target
+    }
+    if ($.lastMatch1 =~ /^k$/i) {
+        do sp "Kyrie Eleison" $target
+    }
+    if ($.lastMatch1 =~ /^as$/i) {
+        do sp "Assumptio" $target
+    }
+    if ($.lastMatch1 =~ /^an$/i) {
+        do sp "Angelus" $target
+    }
+}
+
+automacro k014_ask_for_buff {
+    pubm /ff/i, 12
+    call {
+        $lastPlayerAskingBuff = $.lastpub
+    }
+}
+
+automacro k014_ask_for_buff_reply {
+    party /^y$/i
+    call {
+        $playerFound = @eval(getPlayerByName("$lastPlayerAskingBuff"))
+        stop if ($playerFound == 0)
+
+        call k014_give_buff
+    }
+}
+
+macro k014_give_buff {
+    do sp "Increase AGI" $binID
+    pause 1
+    do sp "Blessing" $binID
+    pause 1
+    do sp "Heal" $binID
+}
+
+# automacro k014_auto_lex_aeterna {
+#     console /Player (.*) \((\d+)\) is casting (.*) on Monster (.*) \((\d+)\).*/i
+#     call {
+#         $r = @rand(1,100)
+#         if ($r < 90 && $master == $.lastMatch1) {
+#             do sm "Lex Aeterna" $.lastMatch5
+#         }
+#         log dice: $r
+#     }
+# }

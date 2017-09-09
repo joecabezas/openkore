@@ -9,6 +9,10 @@
 #
 #########################################################################
 
+use lib 'C:/strawberry-5.12.2/perl/lib';
+use lib 'C:/strawberry-5.12.2/perl/site/lib';
+use lib 'C:/strawberry-5.12.2/perl/vendor/lib';
+
 package main;
 use strict;
 use FindBin qw($RealBin);

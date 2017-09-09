@@ -1,0 +1,113 @@
+!include ../../custom/common/eventMacros/location.pl
+!include ../../custom/common/eventMacros/hook_self_died.pl
+
+automacro k014_ask_warp_after_dead {
+	MapLoaded geffen
+	CurrentHP < 1%
+	call k014_go_to_warp_place
+}
+
+macro k014_go_to_warp_place {
+	$warpPlace = geffen 154 37
+	log going to warp place
+	do move $warpPlace
+	do ai manual
+	pause 1
+	do move $warpPlace
+	do busmsg all waiting in warp place $warpPlace want to go to gef_fild10
+}
+
+automacro k014_am_warp_portal_ready {
+    BusMsg /^warp portal ready to (\S+) placed in (\S+ \d+ \d+)$/
+    CheckOnAI auto, manual
+    call k014_warp_portal_ready
+}
+
+macro k014_warp_portal_ready {
+	$warpLocation = getLocationFromText("$.BusMsgLastMsg")
+
+	$mapBefore = $.map
+	do move $warpLocation
+	pause 3
+
+	log map1: $mapBefore
+	log map2: $.map
+
+	if ($mapBefore != $.map) {
+		do ai on
+	} else {
+		log not in desired map, stay in manual AI, ask again for warp portal
+		pause 3
+		call k014_go_to_warp_place
+	}
+}
+
+automacro k014_ask_heal_from_leacher_healer {
+	InMap gef_fild14
+	CurrentHP < 60%
+	CurrentHP > 1
+	CheckOnAI auto, manual
+	timeout 20
+	call {
+		$posx = 364
+		$posy = 216
+		$maxDistance = 4
+	    $rposx = &eval($posx + ((-1,1)[rand 2]) * int(rand($maxDistance)))
+	    $rposy = &eval($posy + ((-1,1)[rand 2]) * int(rand($maxDistance)))
+
+	    do ai manual
+	    do move $rposx $rposy
+	    do busmsg all need heal in $.map $.pos
+
+	    do ai on
+	    pause 1
+	    do ai manual
+
+	    release k014_am_healed_continue_farm
+	}
+}
+
+automacro k014_am_healed_continue_farm {
+	InMap gef_fild14
+	CurrentHP > 90%
+	CheckOnAI auto, manual
+	run-once 1
+	call {
+		pause 5
+		do busmsg all I am healed, thanks
+		pause 5
+		do ai on
+	}
+}
+
+macro aaa {
+	$location = prontera 161 81
+	$vendername = *Malako*
+	$itemname = Empty Bottle
+	$itemprice = 199
+
+	do move $location
+
+	$venderid = &vender($vendername)
+
+	log vendername = $vendername
+	log venderid = $venderid
+
+	do vender $venderid
+
+	$venderitem = &venderitem($itemname)
+	$venderprice = &venderprice($venderitem)
+
+	log venderitem = $venderitem
+	log venderprice = $venderprice
+
+	do vender end
+}
+
+automacro k014_websocket_test {
+    BusMsg /./
+    CheckOnAI auto, manual
+    call {
+    	log received: $.BusMsgLastMsg
+    }
+}

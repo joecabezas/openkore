@@ -1,0 +1,13 @@
+# automacro k014_alert_pubm {
+# 	pubm /./
+# 	call k014_sfx_levelup
+# }
+
+automacro k014_alert_pm {
+	pm /./
+	call k014_sfx_levelup
+}
+
+macro k014_sfx_levelup {
+	do eval Utils::Win32::playSound('C:\\Users\Joe\games\openkore\sfx\320655__rhodesmas__level-up-01.wav')
+}

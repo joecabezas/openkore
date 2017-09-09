@@ -3232,3 +3232,17 @@ casp_in01 231 203 casp_in01 159 205
 casp_in01 262 203 casp_in01 191 201
 casp_auct02 40 36 caspen 151 198
 casp_dun01 23 38 caspen 267 277
+xmas 149 41 xmas_fild01 80 248
+gon_dun01 153 45 gonryun 159 201
+gon_dun01 153 45 gonryun 159 201
+xmas_dun01 129 130 xmas_dun02 131 130
+xmas 143 314 xmas_dun01 205 16
+xmas_dun02 129 130 xmas_dun01 132 130
+xmas 149 41 xmas_fild01 80 248
+xmas 143 314 xmas_dun01 205 16
+xmas_dun02 129 130 xmas_dun01 132 130
+xmas 143 314 xmas_dun01 205 16
+gef_fild14 371 219 gef_fild10 31 219
+gef_fild10 27 219 gef_fild14 367 219
+geffen 43 85 geffen_in 70 138
+pay_arche 81 17 payon 228 326

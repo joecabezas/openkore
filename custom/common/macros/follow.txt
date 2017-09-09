@@ -1,0 +1,52 @@
+automacro k014_follow {
+    party /^follow$/i
+    call {
+        $master = $.lastparty
+        do lookp $.lastparty
+        do follow $.lastparty
+     }
+}
+
+macro getMaster {
+    $master = @config(followTarget)
+    if ($master == "") {
+        log no master set
+    }
+}
+
+automacro test {
+    party /^rr$/i
+    call ghostwalk
+}
+
+macro ghostwalk {
+    call getMaster
+    $playerFound = @eval(getPlayerByName("$master"))
+    stop if ($playerFound == 0)
+
+    $maxDistance = 4
+    $rposx = @eval($posx + ((-1,1)[rand 2]) * int(rand($maxDistance)))
+    $rposy = @eval($posy + ((-1,1)[rand 2]) * int(rand($maxDistance)))
+
+    do move $rposx $rposy
+}
+
+sub getPlayerByName {
+    # Log::message ">>>init" . "\n";
+    # Log::message "a0: $_[0]" . "\n";
+    my $player_found = 0;
+    foreach my $_player (@{$::playersList->getItems()}) {
+        # Log::message ">>>0: " . $_player->{'name'} . "\n";
+        next if $_player->{actorType} ne "Player";
+        # Log::message ">>>0". "\n";
+        # Log::message ">>>0 pn: '". $_player->{'name'} ."'\n";
+        # Log::message ">>>0 a0: '". $_[0] ."'\n";
+        next if $_player->{'name'} ne "$_[0]";
+        # Log::message ">>>1". "\n";
+        $::Macro::Data::varStack{posx} = $_player->{'pos_to'}{x};
+        $::Macro::Data::varStack{posy} = $_player->{'pos_to'}{y};
+        $::Macro::Data::varStack{binID} = $_player->{'binID'};
+        $player_found = 1;
+    }
+    return $player_found;
+}

@@ -190,3 +190,7 @@ Tao Gunka 0 1 0
 Thanatos 0 1 0
 Turtle General 0 1 0
 Vesper 0 1 0
+
+### Custom
+
+Cookie 0

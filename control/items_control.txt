@@ -45,7 +45,8 @@ all 0 1 0
 # Adjust these to your needs
 
 Butterfly Wing 10 1 0
-Fly Wing 100 1 0
+Fly Wing 100 0 0
+Awakening Potion 10 0 0
 
 Blue Potion 0 1 0
 Condensed Red Potion 50 1 0

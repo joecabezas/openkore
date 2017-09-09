@@ -1,0 +1,98 @@
+!include ../../custom/common/eventMacros/location.pl
+!include ../../custom/common/eventMacros/hook_self_died.pl
+
+automacro k014_am_somebody_is_waiting_for_warp {
+    BusMsg /^waiting in warp place (\S+ \d+ \d+) want to go to (\S+)$/
+    CheckOnAI auto, manual
+    call k014_somebody_is_waiting_for_warp
+}
+
+macro k014_somebody_is_waiting_for_warp {
+	$location = getLocationFromText("$.BusMsgLastMsg")
+	$destination = getDestinationMapFromTextEnd("$.BusMsgLastMsg")
+	# $location = geffen 153 48
+	# $destination = gef_fild10
+
+	$map = getMapFromLocation("$location")
+	$posx = getPosXFromLocation("$location")
+	$posy = getPosYFromLocation("$location")
+	# log location: $location, destination: $destination, map: $map, posx: $posx, posy: $posy
+
+	# stop
+
+	$maxDistance = 2
+    $warpx = &eval($posx + ((-1,1)[rand 2]) * int(rand($maxDistance)))
+    $warpy = &eval($posy + ((-1,1)[rand 2]) * int(rand($maxDistance)))
+
+    #TODO: prevent warp portal to be in same location as caster
+
+	do ai manual
+	pause 1
+	do move $location
+
+	#give some time to heal if needed
+	do ai on
+	pause 5
+	do ai manual
+	pause 1
+
+	do ai manual
+	pause 1
+	do move $location
+
+	do sl 27 $warpx $warpy
+	pause 2
+	do warp $destination
+	do busmsg all warp portal ready to $destination placed in $map $warpx $warpy
+	pause 5
+	do move $warpx $warpy
+	pause 2
+	do ai on
+}
+
+#make leacher wait in entrance on high orcs
+automacro k014_am_start_leaching_high_orcs {
+	MapLoaded gef_fild14
+	call k014_start_leaching_high_orcs
+}
+
+macro k014_start_leaching_high_orcs {
+	do ai manual
+	log High Orc map loaded, I will stay in entrance...
+	do move gef_fild14 373 215
+	pause 2
+	do sit
+}
+
+automacro k014_am_somebody_needs_heal {
+    BusMsg /^need heal in (\S+ \d+ \d+)$/
+    CheckOnAI auto, manual
+    call {
+    	do ai on
+    }
+}
+
+automacro k014_am_continue_leaching {
+    BusMsg /^I am healed, thanks$/
+    CheckOnAI auto, manual
+    call {
+    	pause 5
+    	call k014_start_leaching_high_orcs
+    }
+}
+
+# sub aaa {
+# 	Log::message "hola1";
+# 	my ($text) = @_;
+# 	$text =~ /^waiting in warp place (.*) (\d+) (\d+)$/;
+# 	Log::message "1: $1, 2:$2, 3:$3\n";
+# 	@values = ($1, $2, $3);
+# 	Log::message "values:@values\n";
+# 	Log::message "values0:$values[0]\n";
+# 	Log::message "values1:$values[1]\n";
+# 	Log::message "values2:$values[2]\n";
+# 	use Data::Dumper;
+# 	Log::message Dumper(\@values);
+# 	Log::message "done2";
+# 	return \@values;
+# }
