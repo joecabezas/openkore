@@ -129,12 +129,13 @@ sub onClientData {
 ##
 # void $BaseWebSocketServer->broadcast(String message)
 #
-# Send a message to all clients.
+# Send a message to all clients, except the sender
 sub broadcast {
-    my ($self, $message) = @_;
+    my ($self, $message, $client_sender) = @_;
 
     for my $client (@{$self->{BS_clients}->getItems}) {
         next unless $client->{websocket_hs} && $client->{websocket_hs}->is_done;
+        next if $client_sender->getIndex() eq $client->getIndex();
 
         $client->send($client->{websocket_frame}->new($message)->to_bytes);
     }

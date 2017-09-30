@@ -21,7 +21,7 @@ sub new {
 }
 
 sub websocket_message_received {
-    my ($self, $message) = @_;
+    my ($self, $message, $client) = @_;
     $self->message(">>>websocketBus::Server::MainServer:websocket_message_received 0");
     $self->message("message");
     $self->message(Dumper($message));
@@ -37,7 +37,7 @@ sub websocket_message_received {
     #broadcast message to all clients
     #TODO: dont send message to sender
 
-    $self->broadcast($message);
+    $self->broadcast($message, $client);
 }
 
 1;
