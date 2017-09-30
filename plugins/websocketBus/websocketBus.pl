@@ -3,7 +3,6 @@ package websocketBus;
 use lib 'C:/strawberry-5.12.2/perl/lib';
 use lib 'C:/strawberry-5.12.2/perl/site/lib';
 use lib 'C:/strawberry-5.12.2/perl/vendor/lib';
-# use lib 'C:/Strawberry/perl/site/lib/auto/Digest/SHA';
 
 use strict;
 use Plugins;
@@ -35,14 +34,15 @@ sub Unload {
 message "version: ";
 message $];
 
-
 ##### Seting webServer after of plugins loads
 sub post_loading {
-	$bind = $config{webBind} || "localhost";
+	$bind = $config{websocketBusHost} || "localhost";
+	$port = $config{websocketBusPort} || "8080";
 
 	eval {
-		require WebMonitor::WebSocketServer;
-		$socketServer = new WebMonitor::WebSocketServer(8080, $bind);
+		require websocket::CustomWebsocketServer;
+		$socketServer = new websocket::CustomWebsocketServer($port, $bind);
+		message "Websocket started $bind:$port"
 	};
 	unless ($socketServer) {
 		error "WebSocket server failed to start: $@\n"
