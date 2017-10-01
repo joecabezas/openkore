@@ -30,10 +30,14 @@ sub warning {
 #
 # Create a new websocket bus server. See Base::Server->new() for a description of the parameters.
 sub new {
-    my ($class, $port, $bind) = @_;
+    my $class = shift;
+    my $args = shift;
     my $self;
 
-    $self = $class->SUPER::new($port, $bind);
+    $self->{host} = $args->{host};
+    $self->{port} = $args->{port};
+
+    $self = $class->SUPER::new($self->{port}, $self->{host});
     $self->{BAS_maxID} = 0;
 
     return $self;
@@ -58,8 +62,8 @@ sub onClientNew {
     my ($self, $client) = @_;
 
     $self->message(">>>websocketBus::Server::AbstractServer:onClientNew 0");
-    $self->message(">>>self");
-    $self->message(Dumper($self));
+    # $self->message(">>>self");
+    # $self->message(Dumper($self));
 
     $client->{ID} = $self->{BAS_maxID};
     $self->{BAS_maxID}++;
@@ -77,25 +81,23 @@ sub onClientData {
     my ($self, $client, $data, $index) = @_;
 
     $self->message(">>>websocketBus::Server::AbstractServer:onClientData 0");
-    # $self->message(">>>client");
-    # $self->message(Dumper($client));
     $self->message(">>>data");
     $self->message(Dumper($data));
     $self->message(">>>index");
     $self->message(Dumper($index));
 
-    $self->message(">>>websocket_hs");
-    $self->message(Dumper($client->{websocket_hs}));
-    $self->message(">>>websocket_frame");
-    $self->message(Dumper($client->{websocket_frame}));
+    # $self->message(">>>websocket_hs");
+    # $self->message(Dumper($client->{websocket_hs}));
+    # $self->message(">>>websocket_frame");
+    # $self->message(Dumper($client->{websocket_frame}));
 
     $client->{websocket_hs} ||= Protocol::WebSocket::Handshake::Server->new;
     $client->{websocket_frame} ||= Protocol::WebSocket::Frame->new;
 
-    $self->message(">>>websocket_hs");
-    $self->message(Dumper($client->{websocket_hs}));
-    $self->message(">>>websocket_frame");
-    $self->message(Dumper($client->{websocket_frame}));
+    # $self->message(">>>websocket_hs");
+    # $self->message(Dumper($client->{websocket_hs}));
+    # $self->message(">>>websocket_frame");
+    # $self->message(Dumper($client->{websocket_frame}));
 
     unless ($client->{websocket_hs}->is_done) {
         $client->{websocket_hs}->parse($data);
@@ -108,7 +110,6 @@ sub onClientData {
             $self->message(Dumper($client->{websocket_hs}->to_string));
             $client->send($client->{websocket_hs}->to_string);
         }
-
         return
     }
 
@@ -120,6 +121,8 @@ sub onClientData {
 
     while (defined(my $message = $client->{websocket_frame}->next)) {
         $self->message(">>>websocketBus::Server::AbstractServer:onClientData 4");
+        $self->message(">>>message");
+        $self->message(Dumper($message));
         $self->websocket_message_received($message, $client);
     }
 
@@ -132,13 +135,18 @@ sub onClientData {
 # Send a message to all clients, except the sender
 sub broadcast {
     my ($self, $message, $client_sender) = @_;
+    $self->message(">>>websocketBus::Server::AbstractServer:broadcast START");
 
     for my $client (@{$self->{BS_clients}->getItems}) {
+        $self->message(">>>websocketBus::Server::AbstractServer:broadcast 0");
         next unless $client->{websocket_hs} && $client->{websocket_hs}->is_done;
+        $self->message(">>>websocketBus::Server::AbstractServer:broadcast 1");
         next if $client_sender->getIndex() eq $client->getIndex();
 
+        $self->message(">>>websocketBus::Server::AbstractServer:broadcast 2");
         $client->send($client->{websocket_frame}->new($message)->to_bytes);
     }
+    $self->message(">>>websocketBus::Server::AbstractServer:broadcast 3");
 }
 
 return 1;

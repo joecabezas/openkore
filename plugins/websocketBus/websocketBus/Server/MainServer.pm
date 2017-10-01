@@ -11,11 +11,27 @@ use Data::Dumper;
 
 sub new {
 	my $class = shift;
-	my $port = shift;
-	my $bind = shift;
-	my %args = @_;
-	my $self = $class->SUPER::new($port, $bind);
-	$self->{quiet} = $args{quiet};
+	my $args = shift;
+
+	Log::message ">>>websocketBus::Server::MainServer new START\n";
+	Log::message "class\n";
+	Log::message Dumper($class);
+	Log::message "args\n";
+	Log::message Dumper($args);
+
+	my $self = $class->SUPER::new({
+		host => $args->{host},
+		port => $args->{port}
+	});
+
+	$self->{quiet} = $args->{quiet};
+	$self->{host} = $args->{host};
+	$self->{port} = $args->{port};
+
+	# $self->message("port");
+	# $self->message(Dumper($port));
+	# $self->message("bind");
+	# $self->message(Dumper($bind));
 
 	return $self;
 }
@@ -33,9 +49,6 @@ sub websocket_message_received {
 	# } catch {
 	# 	warning "WARNING: websocketBus: $_"."\n";
 	# };
-
-    #broadcast message to all clients
-    #TODO: dont send message to sender
 
     $self->broadcast($message, $client);
 }
