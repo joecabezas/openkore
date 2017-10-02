@@ -1,5 +1,10 @@
 package websocketBus;
 
+use Data::Dumper;
+
+use Try::Tiny;
+use JSON;
+
 use lib $Plugins::current_plugin_folder;
 
 use strict;
@@ -8,7 +13,6 @@ use Settings;
 use Globals;
 use Log qw(warning message error);
 
-use Data::Dumper;
 use websocketBus::Client::MainClient;
 
 # Initialize some variables as well as plugin hooks
@@ -53,7 +57,7 @@ sub post_loading {
 	# 	mainLoop();
 	# }
 
-	# delete me
+	# # delete me
 	# while(1){
 	# 	mainLoop();
 	# }
@@ -65,9 +69,17 @@ sub on_message_received {
 	Log::message "$message\n";
 	Log::message Dumper($message);
 
+	my $message_object;
+
+	try {
+		$message_object = JSON::decode_json($message);
+	} catch {
+		warning "WARNING: websocketBus: $_"."\n";
+	};
+
 	#TODO: filter by 'to' field
 	# if (($char && $1 eq $char->name) || $1 eq "all");
-	Plugins::callHook('websocketBus_received', {message => $message});
+	Plugins::callHook('websocketBus_received', {message => $message_object->{message}});
 }
 
 sub mainLoop {

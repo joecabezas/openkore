@@ -14,192 +14,189 @@ use Data::Dumper;
 
 # State constants.
 use constant {
-	NOT_CONNECTED   => 1,
-	STARTING_SERVER => 2,
-	HANDSHAKING     => 3,
-	CONNECTED       => 4
+    NOT_CONNECTED   => 1,
+    STARTING_SERVER => 2,
+    HANDSHAKING     => 3,
+    CONNECTED       => 4
 };
 
 # Time constants.
 use constant {
-	RECONNECT_INTERVAL => 5,
-	RESTART_INTERVAL   => 5
+    RECONNECT_INTERVAL => 5,
+    RESTART_INTERVAL   => 5
 };
 
 
 sub new {
-	my $class = shift;
-	my $args = shift;
-	my $self = bless {}, $class;
+    my $class = shift;
+    my $args = shift;
+    # my $self = bless {}, $class;
 
-	$self->{host} = $args->{host};
-	$self->{port} = $args->{port};
-	$self->{on_message_received} = $args->{on_message_received};
+    # $self->{host} = $args->{host};
+    # $self->{port} = $args->{port};
+    # $self->{on_message_received} = $args->{on_message_received};
 
-	Log::message ">>>websocketBus::Client::MainClient 0"."\n";
-	Log::message ">>>class"."\n";
+    Log::message ">>>websocketBus::Client::MainClient 0"."\n";
+    Log::message ">>>class"."\n";
     Log::message Dumper($class);
 
-	# A queue containing messages to be sent next time we're
-	# connected to the bus.
-	$self->{sendQueue} = [];
-	# $self->{seq} = 0;
+    # $self->{client} = new websocketBus::Client::SimpleClient({
+    #     host => $self->{host},
+    #     port => $self->{port}
+    # });
+    # $self->{state} = HANDSHAKING;
+    my $self = $class->SUPER::new({
+        host => $args->{host},
+        port => $args->{port},
+        on_message_received => $args->{on_message_received}
+    });
 
-	# $self->{onMessageReceived} = new CallbackList();
-	# $self->{onDialogRequested} = new CallbackList();
+    $self->{starter} = new websocketBus::Server::Starter({
+        host => $self->{host},
+        port => $self->{port},
+    });
 
-	$self->{starter} = new websocketBus::Server::Starter({
-		host => $self->{host},
-		port => $self->{port},
-	});
+    # A queue containing messages to be sent next time we're
+    # connected to the bus.
+    $self->{sendQueue} = [];
+    # $self->{seq} = 0;
 
-	# Log::message ">>>self"."\n";
- #    Log::message Dumper($self);
+    # Log::message ">>>self"."\n";
+    # Log::message Dumper($self);
 
-	$self->{state} = STARTING_SERVER;
+    $self->{state} = STARTING_SERVER;
 
-	# if (!$self->{host} && !$self->{port}) {
-	# 	Log::message ">>>websocketBus::Client::MainClient 1"."\n";
-	# 	$self->{starter} = new websocketBus::Server::Starter();
-	# 	$self->{state} = STARTING_SERVER;
-	# 	Log::message ">>>websocketBus::Client::MainClient 2"."\n";
-	# } else {
-	# 	Log::message ">>>websocketBus::Client::MainClient 3"."\n";
-	# 	$self->reconnect();
-	# }
+    # if (!$self->{host} && !$self->{port}) {
+    #   Log::message ">>>websocketBus::Client::MainClient 1"."\n";
+    #   $self->{starter} = new websocketBus::Server::Starter();
+    #   $self->{state} = STARTING_SERVER;
+    #   Log::message ">>>websocketBus::Client::MainClient 2"."\n";
+    # } else {
+    #   Log::message ">>>websocketBus::Client::MainClient 3"."\n";
+    #   $self->reconnect();
+    # }
 
-	return $self;
+    return bless $self, $class;
 }
 
 sub iterate {
-	# Log::message ">>>websocketBus::Client::MainClient iterate START"."\n";
-	my ($self) = @_;
-	my $state = $self->{state};
+    # Log::message ">>>websocketBus::Client::MainClient iterate START"."\n";
+    my ($self) = @_;
+    my $state = $self->{state};
 
-	if ($state == NOT_CONNECTED) {
-		# Log::message ">>>websocketBus::Client::MainClient iterate NOT_CONNECTED 0"."\n";
-		if (time - $self->{connectTime} > RECONNECT_INTERVAL) {
-			$self->reconnect();
-		}
-	} elsif ($state == STARTING_SERVER) {
-		# Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 0"."\n";
-		if (time - $self->{startTime} > RESTART_INTERVAL) {
-			# Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 1"."\n";
-			#print "Starting\n";
-			my $starter = $self->{starter};
-			# Log::message ">>>starter\n";
-   			Log::message Dumper($starter);
-			my $state = $starter->iterate();
-			if ($state == websocketBus::Server::Starter::STARTED) {
-				# Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 2"."\n";
-				$self->{state} = HANDSHAKING;
-				$self->{host}  = $starter->getHost();
-				$self->{port}  = $starter->getPort();
-				print "websocketBus server started at $self->{host}:$self->{port}\n";
-				$self->reconnect();
-				$self->{startTime} = time;
+    if ($state == NOT_CONNECTED) {
+        # Log::message ">>>websocketBus::Client::MainClient iterate NOT_CONNECTED 0"."\n";
+        if (time - $self->{connectTime} > RECONNECT_INTERVAL) {
+            $self->reconnect();
+        }
+    } elsif ($state == STARTING_SERVER) {
+        Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 0"."\n";
+        if (time - $self->{startTime} > RESTART_INTERVAL) {
+            Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 1"."\n";
+            #print "Starting\n";
+            # Log::message Dumper($self->{starter});
+            my $state = $self->{starter}->iterate();
+            if ($state == websocketBus::Server::Starter::STARTED) {
+                Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 2"."\n";
+                $self->{host}  = $self->{starter}->getHost();
+                $self->{port}  = $self->{starter}->getPort();
+                $self->{state} = NOT_CONNECTED;
+                print "websocketBus server started at $self->{host}:$self->{port}\n";
+                $self->reconnect();
+                $self->{startTime} = time;
 
-			} elsif ($state == websocketBus::Server::Starter::FAILED) {
-				# Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 3"."\n";
-				# # Cannot start; try again.
-				# #print "Start failed.\n";
-				# $self->{starter} = new websocketBus::Server::Starter();
-				# $self->{startTime} = time;
-			}
-		}
-	} elsif ($state == HANDSHAKING) {
-		# Log::message ">>>websocketBus::Client::MainClient iterate HANDSHAKING"."\n";
-		#print "Handshaking\n";
-		my $args = $self->readNext();
-		if ($args) {
-			$self->{client}->send("CONNECTED");
-			$self->{state} = CONNECTED;
-			print "Connected\n";
-		}
+            } elsif ($state == websocketBus::Server::Starter::FAILED) {
+                Log::message ">>>websocketBus::Client::MainClient iterate STARTING_SERVER 3"."\n";
+                # # Cannot start; try again.
+                print "Start failed, trying again.\n";
+                $self->{starter} = new websocketBus::Server::Starter();
+                $self->{startTime} = time;
+            }
+        }
+    } elsif ($state == HANDSHAKING) {
+        Log::message ">>>websocketBus::Client::MainClient iterate HANDSHAKING"."\n";
+        # print "Handshaking\n";
+        my $args = $self->readNext();
+        if ($args) {
+            $self->{state} = CONNECTED;
+            print "Connected\n";
+        }
 
-	} elsif ($state == CONNECTED) {
-		# Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 0"."\n";
-		# Send queued messages.
-		while (@{$self->{sendQueue}} > 0) {
-			# Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 1"."\n";
-			my $message = shift @{$self->{sendQueue}};
-			last if (!$self->send($message));
-			# Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 2"."\n";
-		}
+    } elsif ($state == CONNECTED) {
+        # Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 0"."\n";
+        # Send queued messages.
+        while (@{$self->{sendQueue}} > 0) {
+            Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 1"."\n";
+            my $message = shift @{$self->{sendQueue}};
+            last if (!$self->send($message));
+            Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 2"."\n";
+        }
 
-		# Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 3"."\n";
+        # Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 3"."\n";
 
-		if ($self->{state} == CONNECTED) {
-			# Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 4"."\n";
-			while (my $args = $self->readNext()) {
-				# Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 5"."\n";
-				# Log::message ">>>args"."\n";
-   				# Log::message Dumper($args);
+        if ($self->{state} == CONNECTED) {
+            # Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 4"."\n";
+            while (my $args = $self->readNext()) {
+                Log::message ">>>websocketBus::Client::MainClient iterate CONNECTED 5"."\n";
+            }
+        }
+    }
 
-   				# Make callback
-				$self->{on_message_received}($args);
-			}
-		}
-	}
-
-	return $self->{state};
+    return $self->{state};
 }
 
 sub getState {
-	return $_[0]->{state};
+    return $_[0]->{state};
 }
 
 sub serverHost {
-	return $_[0]->{host};
+    return $_[0]->{host};
 }
 
 sub serverPort {
-	return $_[0]->{port};
+    return $_[0]->{port};
 }
 
 sub ID {
-	return $_[0]->{ID};
+    return $_[0]->{ID};
 }
 
 sub reconnect {
-	my ($self) = @_;
-	Log::message ">>>websocketBus::Client::MainClient reconnect 0"."\n";
-	eval {
-		print "(Re)connecting\n";
-		Log::message ">>>websocketBus::Client::MainClient reconnect 1"."\n";
-		$self->{client} = new websocketBus::Client::SimpleClient({
-			host => $self->{host},
-			port => $self->{port}
-		});
-		$self->{state} = HANDSHAKING;
-	};
-	Log::message ">>>websocketBus::Client::MainClient reconnect 2"."\n";
-	if (caught('SocketException')) {
-		#print "Cannot connect: $@\n";
-		Log::message ">>>websocketBus::Client::MainClient reconnect 3"."\n";
-		$self->{state} = NOT_CONNECTED;
-		$self->{connectTime} = time;
-	} elsif ($@) {
-		Log::message ">>>websocketBus::Client::MainClient reconnect 4"."\n";
-		die $@;
-	}
-	Log::message ">>>websocketBus::Client::MainClient reconnect 5"."\n";
+    my ($self) = @_;
+    Log::message ">>>websocketBus::Client::MainClient reconnect 0"."\n";
+    eval {
+        print "(Re)connecting\n";
+        Log::message ">>>websocketBus::Client::MainClient reconnect 1"."\n";
+        $self->connect();
+        $self->{state} = HANDSHAKING;
+    };
+    Log::message ">>>websocketBus::Client::MainClient reconnect 2"."\n";
+    if (caught('SocketException')) {
+        #print "Cannot connect: $@\n";
+        Log::message ">>>websocketBus::Client::MainClient reconnect 3"."\n";
+        $self->{state} = NOT_CONNECTED;
+        $self->{connectTime} = time;
+    } elsif ($@) {
+        Log::message ">>>websocketBus::Client::MainClient reconnect 4"."\n";
+        die $@;
+    }
+    Log::message ">>>websocketBus::Client::MainClient reconnect 5"."\n";
 }
 
 # Handle an I/O exception by reconnecting to the bus or restarting the
 # bus server.
 # sub handleIOException {
-# 	my ($self) = @_;
-# 	if ($self->{starter}) {
-# 		$self->{starter} = new websocketBus::Server::Starter();
-# 		$self->{state} = STARTING_SERVER;
-# 		# We add a random delay to prevent clients from starting
-# 		# the server at the same time.
-# 		$self->{startTime} = time + rand(3);
-# 	} else {
-# 		$self->{state} = NOT_CONNECTED;
-# 		$self->{connectTime} = time + rand(3);
-# 	}
+#   my ($self) = @_;
+#   if ($self->{starter}) {
+#       $self->{starter} = new websocketBus::Server::Starter();
+#       $self->{state} = STARTING_SERVER;
+#       # We add a random delay to prevent clients from starting
+#       # the server at the same time.
+#       $self->{startTime} = time + rand(3);
+#   } else {
+#       $self->{state} = NOT_CONNECTED;
+#       $self->{connectTime} = time + rand(3);
+#   }
 # }
 
 # Read the next message from the bus, if any. This method returns undef immediately
@@ -208,22 +205,24 @@ sub reconnect {
 # If the connection with the bus broke while reading the message, then
 # undef is returned, and we'll attempt to reconnect (or restart the bus
 # server) on the next iteration.
-sub readNext {
-	my ($self) = @_;
-	my $args;
-	eval {
-		$args = $self->{client}->readNext();
-	};
-	if (caught('IOException')) {
-		#print "Disconnected from IPC server.\n";
-		$self->handleIOException();
-		return undef;
-	} elsif ($@) {
-		die $@;
-	} else {
-		return $args;
-	}
-}
+# sub readNext {
+#     $class = shift;
+#     my ($self) = @_;
+#     my $args;
+#     eval {
+#         # $args = $self->{client}->readNext();
+#         $args = $class->SUPER::readNext();
+#     };
+#     if (caught('IOException')) {
+#         #print "Disconnected from IPC server.\n";
+#         $self->handleIOException();
+#         return undef;
+#     } elsif ($@) {
+#         die $@;
+#     } else {
+#         return $args;
+#     }
+# }
 
 ##
 # boolean $Bus_Client->send(String messageID, args)
@@ -236,24 +235,24 @@ sub readNext {
 # restart the bus server) on the next iteration. Once reconnected,
 # all queued messages will be sent.
 sub send {
-	my ($self, $args) = @_;
-	if ($self->{state} == CONNECTED) {
-		eval {
-			$self->{client}->send($args);
-		};
-		if (caught('IOException')) {
-			$self->handleIOException();
-			push @{$self->{sendQueue}}, $args;
-			return 0;
-		} elsif ($@) {
-			die $@;
-		} else {
-			return 1;
-		}
-	} else {
-		push @{$self->{sendQueue}}, $args;
-		return 0;
-	}
+    my ($self, $args) = @_;
+    if ($self->{state} == CONNECTED) {
+        eval {
+            $self->{client}->send($args);
+        };
+        if (caught('IOException')) {
+            $self->handleIOException();
+            push @{$self->{sendQueue}}, $args;
+            return 0;
+        } elsif ($@) {
+            die $@;
+        } else {
+            return 1;
+        }
+    } else {
+        push @{$self->{sendQueue}}, $args;
+        return 0;
+    }
 }
 
 ##
@@ -318,38 +317,38 @@ sub send {
 # restart the bus server) on the next iteration. Once reconnected,
 # all queued messages will be sent.
 # sub query {
-# 	my ($self, $MID, $args, $options) = @_;
-# 	my %params = (
-# 		bus  => $self,
-# 		seq  => $self->{seq},
-# 		messageID => $MID,
-# 		args => $args
-# 	);
-# 	if ($options) {
-# 		while (my ($key, $value) = each %{$options}) {
-# 			$params{$key} = $value;
-# 		}
-# 	}
+#   my ($self, $MID, $args, $options) = @_;
+#   my %params = (
+#       bus  => $self,
+#       seq  => $self->{seq},
+#       messageID => $MID,
+#       args => $args
+#   );
+#   if ($options) {
+#       while (my ($key, $value) = each %{$options}) {
+#           $params{$key} = $value;
+#       }
+#   }
 
-# 	my %params2 = ($args) ? (%{$args}) : ();
-# 	$params2{SEQ} = $self->{seq};
-# 	$self->send($MID, \%params2);
+#   my %params2 = ($args) ? (%{$args}) : ();
+#   $params2{SEQ} = $self->{seq};
+#   $self->send($MID, \%params2);
 
-# 	$self->{seq} = ($self->{seq} + 1) % 4294967295;
-# 	return new websocketBus::Query(\%params);
+#   $self->{seq} = ($self->{seq} + 1) % 4294967295;
+#   return new websocketBus::Query(\%params);
 # }
 
 # requestDialog(Bytes clientID, String reason, args, Hash options)
 # sub requestDialog {
-# 	my ($self, $clientID, $reason, $args, $options) = @_;
-# 	$options ||= {};
-# 	return new websocketBus::DialogMaster({
-# 		bus => $self,
-# 		peerID => $clientID,
-# 		reason => $reason,
-# 		args   => $args || {},
-# 		timeout => $options->{timeout}
-# 	});
+#   my ($self, $clientID, $reason, $args, $options) = @_;
+#   $options ||= {};
+#   return new websocketBus::DialogMaster({
+#       bus => $self,
+#       peerID => $clientID,
+#       reason => $reason,
+#       args   => $args || {},
+#       timeout => $options->{timeout}
+#   });
 # }
 
 ##
@@ -362,11 +361,11 @@ sub send {
 # - args (Hash): The message arguments.
 # `l`
 # sub onMessageReceived {
-# 	return $_[0]->{onMessageReceived};
+#   return $_[0]->{onMessageReceived};
 # }
 
 # sub onDialogRequested {
-# 	return $_[0]->{onDialogRequested};
+#   return $_[0]->{onDialogRequested};
 # }
 
 1;

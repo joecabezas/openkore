@@ -44,88 +44,90 @@ use Data::Dumper;
 
 #TODO: use our?
 my $socket;
+# my $on_message_received;
 
 sub new {
     my $class = shift;
     my $args = shift;
-    my %self;
+    my $self = bless {}, $class;
 
     Log::message ">>>websocketBus::Client::SimpleClient new 0"."\n";
-    Log::message ">>>args"."\n";
-    Log::message Dumper($args);
+    Log::message ">>>class"."\n";
+    Log::message Dumper($class);
+
+    $self->{host} = $args->{host};
+    $self->{port} = $args->{port};
+    $self->{on_message_received} = $args->{on_message_received};
+
+    Log::message ">>>self"."\n";
+    Log::message Dumper($self);
+
+    Log::message ">>>websocketBus::Client::SimpleClient new 1"."\n";
+    #TODO: use a module for URI
+    $self->{websocket_client} = Protocol::WebSocket::Client->new(
+        url => 'ws://'.$self->{host}.':'.$self->{port}
+    );
+    $self->{websocket_frame} ||= Protocol::WebSocket::Frame->new;
+
+    $self->{websocket_client}->on(read => sub {
+        my ($client, $message) = @_;
+
+        Log::message ">>>websocketBus::Client::SimpleClient on_read 0 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"."\n";
+        Log::message ">>>message"."\n";
+        Log::message Dumper($message);
+
+        # Make callback
+        $self->{on_message_received}($message);
+    });
+    $self->{websocket_client}->on(write => sub {
+        my $client = shift;
+        my ($buf) = @_;
+
+        Log::message ">>>websocketBus::Client::SimpleClient on_write 0 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"."\n";
+        Log::message ">>>@_"."\n";
+        Log::message Dumper(@_);
+        # Log::message ">>>sock"."\n";
+        # Log::message Dumper($sock);
+        Log::message ">>>buf"."\n";
+        Log::message Dumper($buf);
+
+        $socket->send($buf, 0);
+        $socket->flush;
+    });
+
+    Log::message ">>>websocketBus::Client::SimpleClient new 4"."\n";
+
+    return $self;
+}
+
+sub connect {
+    my ($self) = @_;
+    Log::message ">>>websocketBus::Client::SimpleClient connect START"."\n";
+    # Log::message ">>>self"."\n";
+    # Log::message Dumper($self);
 
     $socket = new IO::Socket::INET(
-        PeerHost => $args->{host},
-        PeerPort => $args->{port},
+        PeerHost => $self->{host},
+        PeerPort => $self->{port},
         Proto => 'tcp'
         # Blocking => 0,
         # Timeout => 4
     );
     if (!$socket) {
-        Log::message ">>>websocketBus::Client::SimpleClient new 1"."\n";
         SocketException->throw($@);
     }
-    $self{sock} = $socket;
-    # $self{sock}->autoflush(0);
-
-    Log::message ">>>websocketBus::Client::SimpleClient new 1"."\n";
-    #TODO: use a module for URI
-    $self{websocket_client} = Protocol::WebSocket::Client->new(
-        url => 'ws://'.$args->{host}.':'.$args->{port}
-    );
-    $self{websocket_frame} ||= Protocol::WebSocket::Frame->new;
-
-    $self{websocket_client}->on(write => \&on_write);
-    $self{websocket_client}->on(read => \&on_read);
-
-    Log::message ">>>websocketBus::Client::SimpleClient new 4"."\n";
+    $self->{sock} = $socket;
+    $self->{sock}->autoflush(1);
 
     # Sends a correct handshake header
-    $self{websocket_client}->connect;
-
-    # Register on connect handler
-    # $self{websocket_client}->on(
-    #     connect => sub {
-    #         Log::message ">>>websocketBus::Client::SimpleClient new 5"."\n";
-    #         $self{websocket_client}->write('hi there');
-    #     }
-    # );
-
-    # # Parses incoming data and on every frame calls on_read
-    # Log::message ">>>websocketBus::Client::SimpleClient new 6"."\n";
-    # my $data;
-    # Log::message ">>>data"."\n";
-    # Log::message Dumper($data);
-    # $self{sock}->recv($data, 1024 * 32, 0);
-    # Log::message ">>>data"."\n";
-    # Log::message Dumper($data);
-    # $self{websocket_client}->read($data);
-
-    return bless \%self, $class;
+    $self->{websocket_client}->connect;
 }
 
-sub on_read {
-    my $client = shift;
-    my ($buf) = @_;
-
-    Log::message ">>>websocketBus::Client::SimpleClient on_read 0 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"."\n";
-    Log::message ">>>buf"."\n";
-    Log::message Dumper($buf);
-}
-
-sub on_write {
-    my $client = shift;
-    my ($buf) = @_;
-
-    Log::message ">>>websocketBus::Client::SimpleClient on_write 0 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"."\n";
-    # Log::message ">>>sock"."\n";
-    # Log::message Dumper($self{sock});
-    Log::message ">>>buf"."\n";
-    Log::message Dumper($buf);
-
-    $socket->send($buf, 0);
-    $socket->flush;
-}
+#abstract method
+# sub on_message_received {
+#     my ($self, $message) = @_;
+#     $self->{on_message_received}($message);
+# }
 
 sub DESTROY {
     my ($self) = @_;
@@ -142,9 +144,7 @@ sub send {
         $self->{sock}->send(
             $self->{websocket_frame}->new($message)->to_bytes
         );
-        # $self->{websocket_client}->send(
-        #     $self->{websocket_frame}->new($message)->to_bytes);
-        # $self->{sock}->flush();
+        $self->{sock}->flush;
     };
     if ($@) {
         IOException->throw($@);
@@ -178,11 +178,11 @@ sub readNext {
         }
 
         # Log::message ">>>websocketBus::Client::SimpleClient readNext 6"."\n";
-        # Parses incoming data and on every frame calls on_read
-        # Log::message ">>>data"."\n";
-        # Log::message Dumper($data);
         $self->{websocket_client}->read($data);
-        return $data;
+
+        if($data){
+            return 1;
+        }
     }
 }
 

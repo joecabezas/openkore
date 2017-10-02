@@ -42,14 +42,6 @@ sub websocket_message_received {
     $self->message("message");
     $self->message(Dumper($message));
 
-    # my $message_object;
-
-	# try {
-	# 	$message_object = JSON::decode_json($message);
-	# } catch {
-	# 	warning "WARNING: websocketBus: $_"."\n";
-	# };
-
     $self->broadcast($message, $client);
 }
 

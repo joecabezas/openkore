@@ -126,7 +126,7 @@ sub onClientData {
         $self->websocket_message_received($message, $client);
     }
 
-    $self->message(">>>websocketBus::Server::AbstractServer:onClientData 5");
+    # $self->message(">>>websocketBus::Server::AbstractServer:onClientData 5");
 }
 
 ##
@@ -135,18 +135,20 @@ sub onClientData {
 # Send a message to all clients, except the sender
 sub broadcast {
     my ($self, $message, $client_sender) = @_;
-    $self->message(">>>websocketBus::Server::AbstractServer:broadcast START");
+    # $self->message(">>>websocketBus::Server::AbstractServer:broadcast START");
+    $self->message(">>>message");
+    $self->message(Dumper($message));
 
     for my $client (@{$self->{BS_clients}->getItems}) {
-        $self->message(">>>websocketBus::Server::AbstractServer:broadcast 0");
+        # $self->message(">>>websocketBus::Server::AbstractServer:broadcast 0");
         next unless $client->{websocket_hs} && $client->{websocket_hs}->is_done;
-        $self->message(">>>websocketBus::Server::AbstractServer:broadcast 1");
+        # $self->message(">>>websocketBus::Server::AbstractServer:broadcast 1");
         next if $client_sender->getIndex() eq $client->getIndex();
 
-        $self->message(">>>websocketBus::Server::AbstractServer:broadcast 2");
+        # $self->message(">>>websocketBus::Server::AbstractServer:broadcast 2");
         $client->send($client->{websocket_frame}->new($message)->to_bytes);
     }
-    $self->message(">>>websocketBus::Server::AbstractServer:broadcast 3");
+    # $self->message(">>>websocketBus::Server::AbstractServer:broadcast 3");
 }
 
 return 1;
