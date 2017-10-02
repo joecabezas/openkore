@@ -84,8 +84,6 @@ sub new {
         my ($buf) = @_;
 
         Log::message ">>>websocketBus::Client::SimpleClient on_write 0 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>"."\n";
-        Log::message ">>>@_"."\n";
-        Log::message Dumper(@_);
         # Log::message ">>>sock"."\n";
         # Log::message Dumper($sock);
         Log::message ">>>buf"."\n";
@@ -139,14 +137,21 @@ sub DESTROY {
 #
 # Send a message through the bus. Throws IOException if it fails.
 sub send {
+    Log::message ">>>websocketBus::Client::SimpleClient send START\n";
     my ($self, $message) = @_;
     eval {
-        $self->{sock}->send(
-            $self->{websocket_frame}->new($message)->to_bytes
+        Log::message "message\n";
+        Log::message Dumper($message);
+        Log::message ">>>websocketBus::Client::SimpleClient send 1\n";
+        $self->{websocket_client}->write(
+            $message
         );
-        $self->{sock}->flush;
+        Log::message ">>>websocketBus::Client::SimpleClient send 2\n";
     };
     if ($@) {
+        Log::message ">>>websocketBus::Client::SimpleClient send 3\n";
+        Log::message ">>>error:"."\n";
+        Log::message Dumper($@);
         IOException->throw($@);
     }
 }

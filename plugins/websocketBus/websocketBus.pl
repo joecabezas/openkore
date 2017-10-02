@@ -15,6 +15,11 @@ use Log qw(warning message error);
 
 use websocketBus::Client::MainClient;
 
+use constant {
+	PLUGIN_NAME => 'websocketBus',
+	COMMAND_WEBSOCKET_SEND_MESSAGE => 'wsmsg'
+};
+
 # Initialize some variables as well as plugin hooks
 our $websocketClient;
 
@@ -24,8 +29,16 @@ my $hook = Plugins::addHooks(
 	['start3', \&post_loading],
 );
 
+my $commands = Commands::register(
+	[COMMAND_WEBSOCKET_SEND_MESSAGE, "use ".COMMAND_WEBSOCKET_SEND_MESSAGE." <message>.",\&command_websocket_send_message],
+);
+
 sub unload {
 	Plugins::delHooks($hook);
+	Log::message "\n[".PLUGIN_NAME."] unloading.\n\n";
+	Commands::unregister($commands);
+	undef $commands;
+	undef $websocketClient;
 }
 
 sub post_loading {
@@ -80,6 +93,26 @@ sub on_message_received {
 	#TODO: filter by 'to' field
 	# if (($char && $1 eq $char->name) || $1 eq "all");
 	Plugins::callHook('websocketBus_received', {message => $message_object->{message}});
+}
+
+sub command_websocket_send_message {
+	my (undef, $input) = @_;
+	$input =~ m/^(.*)$/;
+
+	my $args;
+
+	$args->{message} = $1;
+	$args->{sender} = $char->name if ($char);
+
+	my $message_json;
+
+	try {
+		$message_json = JSON::encode_json($args);
+	} catch {
+		warning "WARNING: websocketBus: $_"."\n";
+	};
+
+	$websocketClient->send($message_json);
 }
 
 sub mainLoop {

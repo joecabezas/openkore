@@ -225,7 +225,7 @@ sub reconnect {
 # }
 
 ##
-# boolean $Bus_Client->send(String messageID, args)
+# boolean $Bus_Client->send(String message)
 # Returns: Whether the message was successfully sent.
 #
 # Send a message over the bus.
@@ -235,14 +235,17 @@ sub reconnect {
 # restart the bus server) on the next iteration. Once reconnected,
 # all queued messages will be sent.
 sub send {
-    my ($self, $args) = @_;
+    Log::message ">>>websocketBus::Client::MainClient send START"."\n";
+    my ($self, $message) = @_;
+    Log::message "message\n";
+    Log::message Dumper($message);
     if ($self->{state} == CONNECTED) {
         eval {
-            $self->{client}->send($args);
+            $self->SUPER::send($message);
         };
         if (caught('IOException')) {
-            $self->handleIOException();
-            push @{$self->{sendQueue}}, $args;
+            # $self->handleIOException();
+            push @{$self->{sendQueue}}, $message;
             return 0;
         } elsif ($@) {
             die $@;
@@ -250,7 +253,7 @@ sub send {
             return 1;
         }
     } else {
-        push @{$self->{sendQueue}}, $args;
+        push @{$self->{sendQueue}}, $message;
         return 0;
     }
 }
