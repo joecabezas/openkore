@@ -105,9 +105,9 @@ macro aaa {
 }
 
 automacro k014_websocket_test {
-    BusMsg /./
+    SimpleHookEvent websocketBus_received
     CheckOnAI auto, manual
     call {
-    	log received: $.BusMsgLastMsg
+    	log websocketBus_received received: $.SimpleHookEventLastMessage
     }
 }

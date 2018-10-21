@@ -137,16 +137,16 @@ sub DESTROY {
 #
 # Send a message through the bus. Throws IOException if it fails.
 sub send {
-    Log::message ">>>websocketBus::Client::SimpleClient send START\n";
+    # Log::message ">>>websocketBus::Client::SimpleClient send START\n";
     my ($self, $message) = @_;
     eval {
         Log::message "message\n";
         Log::message Dumper($message);
-        Log::message ">>>websocketBus::Client::SimpleClient send 1\n";
+        # Log::message ">>>websocketBus::Client::SimpleClient send 1\n";
         $self->{websocket_client}->write(
             $message
         );
-        Log::message ">>>websocketBus::Client::SimpleClient send 2\n";
+        # Log::message ">>>websocketBus::Client::SimpleClient send 2\n";
     };
     if ($@) {
         Log::message ">>>websocketBus::Client::SimpleClient send 3\n";

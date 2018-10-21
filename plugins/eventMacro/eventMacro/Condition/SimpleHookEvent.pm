@@ -7,6 +7,9 @@ use base 'eventMacro::Condition';
 use eventMacro::Data;
 use eventMacro::Utilities qw(find_variable);
 
+use Log;
+use Data::Dumper;
+
 sub _parse_syntax {
 	my ( $self, $condition_code ) = @_;
 	
@@ -43,7 +46,10 @@ sub get_new_variable_list {
 	while( my( $key, $value ) = each %{$self->{vars}} ){
 		$new_variables->{".".$self->{name}."Last".ucfirst($key)} = $value;
 	}
-	
+
+	Log::message ">>>eventMacro::Condition::SimpleHookEvent get_new_variable_list\n";
+	Log::message "new_variables\n";
+	Log::message Dumper($new_variables);
 	return $new_variables;
 }
 
